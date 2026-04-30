@@ -6,10 +6,13 @@ import random
 
 st.set_page_config(layout="wide")
 
-st.title("🎬 AI Movie Generator")
+st.title("🎬 AI Movie Generator (Fixed Version)")
 
 mode = st.radio("Choose Mode:", ["Auto Mode", "Manual Mode"])
 
+# -------------------------
+# SCRIPT INPUT
+# -------------------------
 if mode == "Auto Mode":
     topic = st.text_input("Enter a story topic")
 
@@ -26,6 +29,9 @@ if mode == "Manual Mode":
     script = st.text_area("Write script (Name: dialogue)")
     st.session_state.script = script
 
+# -------------------------
+# GENERATE VIDEO
+# -------------------------
 if st.button("🚀 Generate Video"):
 
     if "script" not in st.session_state:
@@ -42,6 +48,7 @@ if st.button("🚀 Generate Video"):
 
         for i, (name, text) in enumerate(lines):
 
+            # Voice
             tts = gTTS(text)
             audio_file = f"voice_{i}.mp3"
             tts.save(audio_file)
@@ -49,28 +56,22 @@ if st.button("🚀 Generate Video"):
             audio = AudioFileClip(audio_file)
             duration = audio.duration
 
+            # Background only (no TextClip)
             bg = ColorClip(
                 size=(1080,1920),
                 color=(random.randint(0,255), random.randint(0,255), random.randint(0,255))
             ).set_duration(duration)
 
-            txt = TextClip(
-                f"{name}: {text}",
-                fontsize=60,
-                color='white',
-                stroke_color='black',
-                stroke_width=4,
-                method='caption',
-                size=(900,None)
-            ).set_position("center").set_duration(duration)
-
-            clip = CompositeVideoClip([bg, txt]).set_audio(audio)
+            # Attach audio
+            clip = bg.set_audio(audio)
 
             clips.append(clip)
 
         final = concatenate_videoclips(clips)
 
-        final.write_videofile("output.mp4", fps=30)
+        final.write_videofile("output.mp4", fps=24)
+
+        st.success("Video generated!")
 
         st.video("output.mp4")
 
