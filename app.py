@@ -33,7 +33,29 @@ if mode == "Manual Mode":
 # -------------------------
 # SAFE IMAGE DOWNLOAD
 # -------------------------
+import requests
+
+PEXELS_API_KEY = "myQe0XFs9PQ5iDyJnRImHAK8UWbdtxXmoRdcdx1Dk6n3DyaH31d6u67Q"
+
 def get_image(query, filename):
+    try:
+        url = "https://api.pexels.com/v1/search"
+        headers = {"Authorization": PEXELS_API_KEY}
+        params = {"query": query, "per_page": 1}
+
+        response = requests.get(url, headers=headers, params=params)
+        data = response.json()
+
+        if data["photos"]:
+            img_url = data["photos"][0]["src"]["portrait"]
+            img_data = requests.get(img_url).content
+
+            with open(filename, "wb") as f:
+                f.write(img_data)
+
+            return True
+    except:
+        return False
     try:
         url = f"https://source.unsplash.com/1080x1920/?{query}"
         r = requests.get(url, timeout=5)
