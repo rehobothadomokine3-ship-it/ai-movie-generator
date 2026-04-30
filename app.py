@@ -1,12 +1,12 @@
 import streamlit as st
 from moviepy.editor import *
 from gtts import gTTS
-import numpy as np
+import requests
 import random
 
 st.set_page_config(layout="wide")
 
-st.title("🎬 AI Movie Generator (Fixed Version)")
+st.title("🎬 AI Movie Generator (With Images)")
 
 mode = st.radio("Choose Mode:", ["Auto Mode", "Manual Mode"])
 
@@ -28,6 +28,15 @@ Narrator: Everything changed suddenly.
 if mode == "Manual Mode":
     script = st.text_area("Write script (Name: dialogue)")
     st.session_state.script = script
+
+# -------------------------
+# GET IMAGE FROM INTERNET
+# -------------------------
+def get_image(query, filename):
+    url = f"https://source.unsplash.com/1080x1920/?{query}"
+    img_data = requests.get(url).content
+    with open(filename, 'wb') as f:
+        f.write(img_data)
 
 # -------------------------
 # GENERATE VIDEO
@@ -56,14 +65,21 @@ if st.button("🚀 Generate Video"):
             audio = AudioFileClip(audio_file)
             duration = audio.duration
 
-            # Background only (no TextClip)
-            bg = ColorClip(
-                size=(1080,1920),
-                color=(random.randint(0,255), random.randint(0,255), random.randint(0,255))
-            ).set_duration(duration)
+            # Get image based on scene text
+            image_file = f"img_{i}.jpg"
+            get_image(text, image_file)
+
+            # Create image clip
+            img_clip = ImageClip(image_file).set_duration(duration)
+
+            # Resize to vertical
+            img_clip = img_clip.resize(height=1920).crop(width=1080, height=1920, x_center=img_clip.w/2, y_center=img_clip.h/2)
+
+            # Add slight zoom (cinematic)
+            img_clip = img_clip.resize(lambda t: 1 + 0.05*t)
 
             # Attach audio
-            clip = bg.set_audio(audio)
+            clip = img_clip.set_audio(audio)
 
             clips.append(clip)
 
@@ -71,7 +87,7 @@ if st.button("🚀 Generate Video"):
 
         final.write_videofile("output.mp4", fps=24)
 
-        st.success("Video generated!")
+        st.success("🎉 Video generated!")
 
         st.video("output.mp4")
 
